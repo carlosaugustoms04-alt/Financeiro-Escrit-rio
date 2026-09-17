@@ -1235,7 +1235,6 @@ function cloudStatusText() {
 
 function showLogin() {
   autenticado = false;
-  sessionStorage.removeItem(AUTH_KEY);
   closeMenu();
   $("login-screen").classList.remove("hidden");
   $("app").classList.add("hidden");
@@ -1256,6 +1255,7 @@ function enterApp() {
 }
 
 function logout() {
+  sessionStorage.removeItem(AUTH_KEY);
   showLogin();
   toast("Você saiu do sistema");
 }
@@ -1323,9 +1323,15 @@ async function boot() {
   populateFilters();
   greeting();
   bind();
-  showLogin();
+  const loggedIn = sessionStorage.getItem(AUTH_KEY) === "1";
+  if (loggedIn) {
+    $("login-screen").classList.add("hidden");
+  } else {
+    showLogin();
+  }
   await syncFromCloudOnBoot();
   if (sessionStorage.getItem(AUTH_KEY) === "1") enterApp();
+  else showLogin();
 }
 
 boot();

@@ -885,7 +885,10 @@ td.num, th.num { text-align: right; }
 }
 
 @media (max-width: 980px) {
-  .app { grid-template-columns: 1fr; }
+  .app {
+    grid-template-columns: 1fr;
+    min-height: 100dvh;
+  }
   .menu-toggle { display: inline-flex; }
 
   .sidebar-backdrop {
@@ -902,21 +905,34 @@ td.num, th.num { text-align: right; }
     opacity: 1;
     pointer-events: auto;
   }
-  body.menu-open { overflow: hidden; }
+  body.menu-open { overflow: hidden; touch-action: none; }
 
   .sidebar {
     position: fixed;
     top: 0;
     left: 0;
+    bottom: 0;
     z-index: 100;
     width: min(300px, 86vw);
-    height: 100vh;
-    height: 100dvh;
+    height: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    max-height: 100dvh;
+    padding: 12px 12px calc(16px + env(safe-area-inset-bottom, 0px));
     transform: translateX(-105%);
     transition: transform 0.24s ease;
     box-shadow: 18px 0 40px rgba(0, 0, 0, 0.28);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
   body.menu-open .sidebar { transform: translateX(0); }
+
+  .sidebar .brand {
+    aspect-ratio: 5 / 2.4;
+    max-height: 96px;
+    margin-bottom: 10px;
+  }
 
   .sidebar-close {
     display: grid;
@@ -935,69 +951,116 @@ td.num, th.num { text-align: right; }
   }
 
   .nav {
-    overflow: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 12px;
+    justify-content: flex-start;
+    gap: 2px;
+    padding-bottom: 8px;
+  }
+  .nav-label {
+    margin-top: 10px;
   }
   .nav-item {
     flex: 0 0 auto;
-    min-height: 42px;
+    min-height: 44px;
   }
 
-  .main { padding: 16px 14px 36px; }
-  .greeting { font-size: 28px; }
-  .subtitle { font-size: 13px; }
+  .main {
+    padding: 14px 12px calc(28px + env(safe-area-inset-bottom, 0px));
+    min-height: 100dvh;
+  }
+  .greeting { font-size: 26px; line-height: 1.15; }
+  .subtitle { font-size: 12.5px; line-height: 1.35; }
   .topbar {
     flex-direction: column;
     align-items: stretch;
-    gap: 14px;
+    gap: 12px;
+    margin-bottom: 16px;
   }
+  .topbar-left { align-items: center; }
   .top-actions {
     width: 100%;
+    gap: 8px;
   }
-  .top-actions .btn { flex: 1 1 auto; }
+  .top-actions .btn { flex: 1 1 calc(50% - 8px); min-width: 0; }
   .header-logo {
-    width: 52px;
-    height: 52px;
+    width: 48px;
+    height: 48px;
     margin-left: auto;
   }
 
   .kpis, .obras-grid, .charts, .tipo-kpis, .tipo-charts, .grid-2, .grid-cards {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
   .filters,
   .filters-func,
   .custom-range {
     grid-template-columns: 1fr;
+    gap: 10px;
   }
   .custom-range { flex-direction: column; }
-  .kpi { min-height: 132px; }
-  .card { padding: 16px; border-radius: 18px; }
-  .table-wrap { margin: 0 -4px; }
+  .kpi { min-height: 120px; padding: 16px; }
+  .kpi strong { font-size: 28px; }
+  .card { padding: 14px 16px; border-radius: 16px; }
+  .table-card { border-radius: 16px; }
+  .table-wrap {
+    margin: 0 -4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  table { min-width: 520px; }
+  .page-head h2 { font-size: 26px; }
   .page-head-row {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
   }
   .func-grid { grid-template-columns: 1fr; }
-  .modal-backdrop { padding: 12px; align-items: flex-end; }
-  .modal, .modal-ponto { width: 100%; max-height: 92vh; overflow: auto; }
+  .modal-backdrop {
+    padding: 0;
+    align-items: stretch;
+    justify-content: flex-end;
+  }
+  .modal, .modal-ponto {
+    width: 100%;
+    max-width: none;
+    max-height: 92dvh;
+    border-radius: 18px 18px 0 0;
+    overflow: auto;
+  }
   .modal-actions { flex-wrap: wrap; }
   .modal-actions .btn { flex: 1 1 auto; }
   .ponto-rail { gap: 12px; padding-bottom: 8px; }
   .config-actions { display: grid; gap: 8px; }
   .config-actions .btn { width: 100%; }
+  .toast {
+    left: 12px;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    z-index: 120;
+  }
 }
 
 @media (max-width: 560px) {
-  .greeting { font-size: 24px; }
+  .greeting { font-size: 22px; }
+  .menu-toggle {
+    width: 42px;
+    height: 42px;
+  }
   .top-actions .btn {
     height: 38px;
-    padding: 0 12px;
+    padding: 0 10px;
     font-size: 12.5px;
   }
   .header-logo { display: none; }
-  .login-logo { width: 120px; height: 120px; }
+  .login-logo { width: 112px; height: 112px; }
   .login-card { padding: 22px 18px 24px; }
   .login-card h1 { font-size: 30px; }
+  .sidebar { width: min(320px, 88vw); }
+  .sidebar .brand { max-height: 84px; }
 }
