@@ -29,9 +29,13 @@
   </div>
 
   <div class="app hidden" id="app">
-    <aside class="sidebar">
-      <div class="brand">
-        <img src="img/logo-vitrina.png" alt="Vitrina Contabilidade" class="brand-logo" />
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <div class="brand">
+          <img src="img/logo-vitrina.png" alt="Vitrina Contabilidade" class="brand-logo" />
+        </div>
+        <button type="button" class="icon-btn sidebar-close" id="btn-menu-close" aria-label="Fechar menu">×</button>
       </div>
 
       <nav class="nav">
@@ -107,9 +111,14 @@
 
     <div class="main">
       <header class="topbar">
-        <div>
-          <h1 class="greeting" id="greeting">Bom dia, Carlos</h1>
-          <p class="subtitle" id="subtitle"></p>
+        <div class="topbar-left">
+          <button type="button" class="menu-toggle" id="btn-menu" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
+            <span></span><span></span><span></span>
+          </button>
+          <div>
+            <h1 class="greeting" id="greeting">Bom dia, Carlos</h1>
+            <p class="subtitle" id="subtitle"></p>
+          </div>
         </div>
         <div class="top-actions">
           <button class="btn btn-ghost" id="btn-saldo-vivo">

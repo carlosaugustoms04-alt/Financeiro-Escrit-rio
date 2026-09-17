@@ -982,7 +982,25 @@ function showView(name) {
   view = name;
   document.querySelectorAll(".view").forEach((el) => el.classList.toggle("hidden", el.id !== `view-${name}`));
   document.querySelectorAll(".nav-item").forEach((el) => el.classList.toggle("active", el.dataset.view === name));
+  closeMenu();
   refresh();
+}
+
+function openMenu() {
+  document.body.classList.add("menu-open");
+  const btn = $("btn-menu");
+  if (btn) btn.setAttribute("aria-expanded", "true");
+}
+
+function closeMenu() {
+  document.body.classList.remove("menu-open");
+  const btn = $("btn-menu");
+  if (btn) btn.setAttribute("aria-expanded", "false");
+}
+
+function toggleMenu() {
+  if (document.body.classList.contains("menu-open")) closeMenu();
+  else openMenu();
 }
 
 function refresh() {
@@ -1054,6 +1072,15 @@ function handleLancamentoClick(e) {
 
 function bind() {
   document.querySelectorAll("[data-view]").forEach((el) => el.addEventListener("click", () => showView(el.dataset.view)));
+  $("btn-menu")?.addEventListener("click", toggleMenu);
+  $("btn-menu-close")?.addEventListener("click", closeMenu);
+  $("sidebar-backdrop")?.addEventListener("click", closeMenu);
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeMenu();
+  });
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 980) closeMenu();
+  });
   ["filtro-tipo", "filtro-categoria", "filtro-periodo", "filtro-de", "filtro-ate"].forEach((id) => {
     $(id).addEventListener("change", () => {
       if (id === "filtro-tipo") populateFilters();
@@ -1209,6 +1236,7 @@ function cloudStatusText() {
 function showLogin() {
   autenticado = false;
   sessionStorage.removeItem(AUTH_KEY);
+  closeMenu();
   $("login-screen").classList.remove("hidden");
   $("app").classList.add("hidden");
   $("login-error").classList.add("hidden");
