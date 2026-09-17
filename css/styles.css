@@ -90,6 +90,12 @@ img, svg { display: block; }
   margin: 0;
 }
 
+.login-sync-hint {
+  font-size: 12px;
+  margin: 0;
+  text-align: center;
+}
+
 .app {
   display: grid;
   grid-template-columns: 260px 1fr;

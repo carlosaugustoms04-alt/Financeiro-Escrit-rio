@@ -68,15 +68,63 @@ function t(desc, tipo, valor, data, categoria, banco, status) {
   };
 }
 
-function load() {
+function loadLocal() {
   const raw = localStorage.getItem(KEY);
   if (raw) return JSON.parse(raw);
   localStorage.setItem(KEY, JSON.stringify(SEED));
   return structuredClone(SEED);
 }
 
-function save() {
+let cloudTimer = null;
+let cloudBusy = false;
+let lastCloudAt = null;
+let lastCloudError = null;
+
+function saveLocal() {
   localStorage.setItem(KEY, JSON.stringify(db));
+}
+
+async function saveCloud(force = false) {
+  if (!window.VitrinaCloud?.ready) {
+    lastCloudError = "Supabase não configurado";
+    return false;
+  }
+  if (cloudBusy && !force) return false;
+  cloudBusy = true;
+  try {
+    const result = await window.VitrinaCloud.save(db);
+    if (result.ok) {
+      lastCloudAt = new Date();
+      lastCloudError = null;
+      return true;
+    }
+    lastCloudError = result.error?.message || "Falha ao salvar na nuvem";
+    return false;
+  } finally {
+    cloudBusy = false;
+  }
+}
+
+function queueCloudSave() {
+  clearTimeout(cloudTimer);
+  cloudTimer = setTimeout(() => { saveCloud(); }, 900);
+}
+
+function save() {
+  saveLocal();
+  queueCloudSave();
+}
+
+function normalizeDb(data) {
+  let next = migrateBancos(migrateCategorias(data));
+  if (!next.acessoUsuario) next.acessoUsuario = next.usuario || "Carlos";
+  if (next.authCredVersion !== 2) {
+    next.acessoUsuario = "Carlos";
+    next.senha = "Carlos27";
+    next.authCredVersion = 2;
+  }
+  if (!next.senha) next.senha = "Carlos27";
+  return next;
 }
 
 function migrateCategorias(data) {
@@ -116,15 +164,8 @@ function migrateBancos(data) {
   return data;
 }
 
-let db = migrateBancos(migrateCategorias(load()));
-if (!db.acessoUsuario) db.acessoUsuario = db.usuario || "Carlos";
-if (db.authCredVersion !== 2) {
-  db.acessoUsuario = "Carlos";
-  db.senha = "Carlos27";
-  db.authCredVersion = 2;
-}
-if (!db.senha) db.senha = "Carlos27";
-save();
+let db = normalizeDb(loadLocal());
+saveLocal();
 let view = "painel";
 const AUTH_KEY = "vitrina-auth-session";
 let autenticado = false;
@@ -863,7 +904,7 @@ function renderConfig() {
           <button type="button" class="btn btn-ghost" id="cfg-sair">Sair</button>
           <button type="button" class="btn btn-danger-text" id="cfg-reset">Zerar todos os lançamentos</button>
         </div>
-        <p class="muted config-status">Dados salvos neste navegador · Vitrina Contabilidade</p>
+        <p class="muted config-status" id="cfg-cloud-status">${cloudStatusText()}</p>
       </article>
 
       <div class="config-cats">
@@ -882,16 +923,28 @@ function renderConfig() {
     db.moeda = $("cfg-moeda").value;
     save(); greeting(); toast("Configurações salvas");
   };
-  $("cfg-cloud").onclick = () => toast("Salvo localmente (nuvem indisponível neste ambiente)");
+  $("cfg-cloud").onclick = async () => {
+    const btn = $("cfg-cloud");
+    btn.disabled = true;
+    btn.textContent = "Salvando…";
+    const ok = await saveCloud(true);
+    btn.disabled = false;
+    btn.textContent = "Salvar na nuvem";
+    const status = $("cfg-cloud-status");
+    if (status) status.textContent = cloudStatusText();
+    toast(ok ? "Dados salvos na nuvem (Supabase)" : `Falha na nuvem: ${lastCloudError || "erro desconhecido"}`);
+  };
   $("cfg-sair").onclick = () => logout();
-  $("cfg-reset").onclick = () => {
+  $("cfg-reset").onclick = async () => {
     if (!confirm("Zerar todos os lançamentos, funcionários e saldos?")) return;
     db = structuredClone(SEED);
     db.usuario = "Carlos";
     db.acessoUsuario = "Carlos";
     db.senha = "Carlos27";
     db.authCredVersion = 2;
-    save(); populateFilters(); refresh(); toast("Todos os lançamentos foram zerados");
+    save();
+    await saveCloud(true);
+    populateFilters(); refresh(); toast("Todos os lançamentos foram zerados");
   };
 
   document.querySelectorAll("[data-cat-add]").forEach((btn) => {
@@ -1144,9 +1197,14 @@ function bind() {
   });
 }
 
-populateFilters();
-greeting();
-bind();
+function cloudStatusText() {
+  if (!window.VitrinaCloud?.ready) return "Nuvem offline · dados só neste navegador";
+  if (lastCloudError) return `Nuvem com erro: ${lastCloudError}`;
+  if (lastCloudAt) {
+    return `Sincronizado com Supabase · ${lastCloudAt.toLocaleString("pt-BR")} · Vitrina Contabilidade`;
+  }
+  return "Pronto para sincronizar com Supabase · Vitrina Contabilidade";
+}
 
 function showLogin() {
   autenticado = false;
@@ -1174,6 +1232,48 @@ function logout() {
   toast("Você saiu do sistema");
 }
 
+function setLoginLoading(loading, msg) {
+  const form = $("form-login");
+  const btn = form?.querySelector('button[type="submit"]');
+  const hint = $("login-sync-hint");
+  if (btn) {
+    btn.disabled = loading;
+    btn.textContent = loading ? "Sincronizando…" : "Acessar";
+  }
+  if (hint) {
+    hint.textContent = msg || "";
+    hint.classList.toggle("hidden", !msg);
+  }
+}
+
+async function syncFromCloudOnBoot() {
+  if (!window.VitrinaCloud?.ready) return;
+  setLoginLoading(true, "Carregando dados da nuvem…");
+  try {
+    const remote = await window.VitrinaCloud.load();
+    if (remote.error) {
+      lastCloudError = remote.error.message || "Erro ao ler a nuvem";
+      setLoginLoading(false, "Nuvem indisponível — usando dados locais. Confira se o SQL do schema foi executado.");
+      return;
+    }
+    if (remote.data && typeof remote.data === "object") {
+      db = normalizeDb(remote.data);
+      saveLocal();
+      lastCloudAt = remote.updatedAt ? new Date(remote.updatedAt) : new Date();
+      lastCloudError = null;
+      setLoginLoading(false, "Dados sincronizados da nuvem.");
+      return;
+    }
+    const ok = await saveCloud(true);
+    setLoginLoading(false, ok
+      ? "Workspace criado na nuvem com os dados locais."
+      : "Não foi possível criar o workspace na nuvem. Rode o SQL em supabase/schema.sql.");
+  } catch (err) {
+    lastCloudError = err?.message || String(err);
+    setLoginLoading(false, "Falha ao sincronizar — usando dados locais.");
+  }
+}
+
 $("form-login").addEventListener("submit", (e) => {
   e.preventDefault();
   const user = $("login-user").value.trim();
@@ -1191,5 +1291,13 @@ $("form-login").addEventListener("submit", (e) => {
   toast(`Bem-vindo, ${db.usuario}`);
 });
 
-if (sessionStorage.getItem(AUTH_KEY) === "1") enterApp();
-else showLogin();
+async function boot() {
+  populateFilters();
+  greeting();
+  bind();
+  showLogin();
+  await syncFromCloudOnBoot();
+  if (sessionStorage.getItem(AUTH_KEY) === "1") enterApp();
+}
+
+boot();
