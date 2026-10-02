@@ -55,6 +55,49 @@ const SEED = {
   transacoes: []
 };
 
+// Aba "Desp Escr" de OUTUBRO.xlsx — competência SETEMBRO/2026.
+// Só entra lançamento com valor. Ids fixos evitam duplicar no F5.
+const DESP_ESCR_SETEMBRO = [
+  { id: "xlsx-desp-emex", desc: "EMEX", tipo: "despesa", valor: 118.08, data: "2026-09-30", categoria: "Folha de pagamento", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-maria-rita", desc: "Maria Rita 3X 926,93", tipo: "despesa", valor: 926.93, data: "2026-09-30", categoria: "Folha de pagamento", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-emily", desc: "Emily 1840,63", tipo: "despesa", valor: 1928.28, data: "2026-09-30", categoria: "Folha de pagamento", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-carlos-augusto", desc: "Carlos Augusto", tipo: "despesa", valor: 2100, data: "2026-09-30", categoria: "Folha de pagamento", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-priscila", desc: "Priscila", tipo: "despesa", valor: 3400, data: "2026-09-30", categoria: "Folha de pagamento", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-priscila-13", desc: "Priscila 13° parcelado em 14 semanas parc 01/14", tipo: "despesa", valor: 972, data: "2026-09-30", categoria: "Folha de pagamento", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-jeniffer", desc: "Jeniffer", tipo: "despesa", valor: 1100, data: "2026-09-30", categoria: "Folha de pagamento", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-aguas", desc: "Aguas de Paraty", tipo: "despesa", valor: 165.72, data: "2026-09-30", categoria: "Água", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-alterdata", desc: "Alterdata 09/26", tipo: "despesa", valor: 1745.63, data: "2026-09-30", categoria: "Despesas com informática", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-curso-dp", desc: "Curso DP 04/06", tipo: "despesa", valor: 226.66, data: "2026-09-30", categoria: "Outros", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-enel", desc: "ENEL ESCRITORIO 08/2026", tipo: "despesa", valor: 314.74, data: "2026-09-30", categoria: "Luz", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-iptu", desc: "IPTU Escritório 9/10", tipo: "despesa", valor: 110.09, data: "2026-09-30", categoria: "IPTU", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-curso-reforma", desc: "CURSO REFORMA TRIBUTARIA 04/06", tipo: "despesa", valor: 200, data: "2026-09-30", categoria: "Outros", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-econet", desc: "Econet Editora", tipo: "despesa", valor: 249.97, data: "2026-09-30", categoria: "Outros", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-oi", desc: "oi 09/2026", tipo: "despesa", valor: 13.31, data: "2026-09-30", categoria: "Outros", banco: "nubank-vitrina", status: "pago" },
+  { id: "xlsx-desp-unimed", desc: "UNIMED PATRICIA/CARLOS/GU", tipo: "despesa", valor: 1660.89, data: "2026-09-30", categoria: "Outros", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-vivo", desc: "VIVO FIBRA E VIVO MOVEL", tipo: "despesa", valor: 336.4, data: "2026-09-30", categoria: "Outros", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-bruno", desc: "Bruno Informática", tipo: "despesa", valor: 600, data: "2026-09-30", categoria: "Despesas com informática", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-patricia", desc: "Patrícia", tipo: "despesa", valor: 1000, data: "2026-09-30", categoria: "Folha de pagamento", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-carlinhos", desc: "Carlinhos", tipo: "despesa", valor: 1000, data: "2026-09-30", categoria: "Folha de pagamento", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-rec-simpl", desc: "Vitrina - Parc Rec Simpl 11/15", tipo: "despesa", valor: 575.91, data: "2026-09-30", categoria: "Outros", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-prefeitura", desc: "Prefeitura Vitrina - Parcela 09/12", tipo: "despesa", valor: 160.6, data: "2026-09-30", categoria: "Outros", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-prev-04", desc: "Carlos PJ - Previdencia 04/2022", tipo: "despesa", valor: 185.36, data: "2026-09-30", categoria: "Outros", banco: "nubank-vitrina", status: "pendente" },
+  { id: "xlsx-desp-prev-13", desc: "Carlos PJ - Previdencia 13/2022", tipo: "despesa", valor: 85.71, data: "2026-09-30", categoria: "Outros", banco: "nubank-vitrina", status: "pendente" }
+];
+
+function mergeDespEscr() {
+  if (!Array.isArray(db.transacoes)) db.transacoes = [];
+  const ids = new Set(db.transacoes.map((t) => t.id));
+  let added = 0;
+  DESP_ESCR_SETEMBRO.forEach((tx) => {
+    if (ids.has(tx.id)) return;
+    db.transacoes.push({ ...tx });
+    ids.add(tx.id);
+    added += 1;
+  });
+  if (added) save();
+  return added;
+}
+
 function cats(tipo) {
   if (!db.categorias) db.categorias = structuredClone(SEED.categorias);
   if (!db.categorias[tipo]) db.categorias[tipo] = [];
@@ -1330,6 +1373,8 @@ async function boot() {
     showLogin();
   }
   await syncFromCloudOnBoot();
+  const imported = mergeDespEscr();
+  if (imported) toast(`${imported} despesas de setembro importadas da planilha`);
   if (sessionStorage.getItem(AUTH_KEY) === "1") enterApp();
   else showLogin();
 }
