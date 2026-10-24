@@ -92,6 +92,10 @@
           Insights
           <span class="badge" id="badge-insights">0</span>
         </button>
+        <button class="nav-item" data-view="assistente">
+          <svg class="nav-ico" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><circle cx="12" cy="12" r="2"/></svg>
+          Assistente IA
+        </button>
 
         <p class="nav-label">Operações</p>
         <button class="nav-item" data-view="orcamentos">
@@ -126,6 +130,7 @@
           </button>
           <button class="btn btn-gold" id="btn-receita">Receita</button>
           <button class="btn btn-brown" id="btn-despesa">Despesa</button>
+          <button class="btn btn-ghost" id="btn-extrato">Extrato</button>
           <img src="img/logo-vitrina.png" alt="Vitrina Contabilidade" class="header-logo" />
         </div>
       </header>
@@ -500,6 +505,7 @@
       <section class="view hidden" id="view-relatorios"></section>
       <section class="view hidden" id="view-categorias"></section>
       <section class="view hidden" id="view-insights"></section>
+      <section class="view hidden" id="view-assistente"></section>
       <section class="view hidden" id="view-orcamentos"></section>
       <section class="view hidden" id="view-recorrentes"></section>
       <section class="view hidden" id="view-configuracoes"></section>
@@ -516,7 +522,7 @@
         <input type="hidden" id="f-id" />
         <input type="hidden" id="f-tipo" />
         <label>Descrição
-          <input id="f-desc" required maxlength="80" placeholder="Ex.: Honorários cliente Silva" />
+          <input id="f-desc" required maxlength="180" placeholder="Ex.: Empresa Silva LTDA · 12.345.678/0001-90 · PIX recebido" />
         </label>
         <div class="grid-2">
           <label>Valor (R$)
@@ -545,6 +551,57 @@
           <button type="submit" class="btn btn-gold" id="modal-save">Salvar</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="modal-extrato">
+    <div class="modal card modal-extrato">
+      <div class="modal-head">
+        <div>
+          <h3>Importar extrato bancário</h3>
+          <p class="muted">Envie o arquivo ou cole o texto. Com a IA ativa, a importação classifica receita/despesa e descrição e lança sozinha no sistema.</p>
+        </div>
+        <button class="icon-btn" id="modal-extrato-close" aria-label="Fechar">×</button>
+      </div>
+      <div class="extrato-form">
+        <div class="grid-2">
+          <label>Banco do extrato
+            <select id="ex-banco"></select>
+          </label>
+          <label>Arquivo CSV / TXT / PDF
+            <input id="ex-file" type="file" accept=".csv,.txt,.pdf,.ofx,text/plain,text/csv,application/pdf" />
+          </label>
+        </div>
+        <label>Colar extrato
+          <textarea id="ex-texto" rows="7" placeholder="Ex.:&#10;02/10/2025 PIX RECEBIDO CLIENTE SILVA 1.500,00&#10;03/10/2025 ENEL ESCRITÓRIO -314,74&#10;03/10/2025;Água Paraty;-165,72"></textarea>
+        </label>
+        <div class="extrato-actions-top">
+          <div class="extrato-actions-btns">
+            <button type="button" class="btn btn-ghost" id="ex-analisar">Só analisar</button>
+            <button type="button" class="btn btn-gold" id="ex-analisar-ia">Importar com IA</button>
+          </div>
+          <p class="muted" id="ex-resumo">Nenhuma linha analisada ainda.</p>
+        </div>
+        <div class="table-wrap extrato-preview-wrap">
+          <table class="extrato-table">
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="ex-check-all" checked title="Marcar todas" /></th>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Tipo</th>
+                <th>Categoria</th>
+                <th class="num">Valor</th>
+              </tr>
+            </thead>
+            <tbody id="ex-preview"></tbody>
+          </table>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="modal-extrato-cancel">Cancelar</button>
+          <button type="button" class="btn btn-gold" id="ex-importar" disabled>Importar selecionados</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -616,8 +673,11 @@
 
   <div class="toast hidden" id="toast"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/cloud.js"></script>
+  <script src="js/ai.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
