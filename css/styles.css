@@ -117,16 +117,18 @@ img, svg { display: block; }
 
 .app {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 272px 1fr;
   min-height: 100vh;
 }
 
 .sidebar {
   background:
-    linear-gradient(180deg, rgba(212, 175, 55, 0.08) 0%, transparent 28%),
-    var(--sidebar);
-  border-right: 1px solid rgba(212, 175, 55, 0.2);
-  padding: 14px 12px 16px;
+    radial-gradient(120% 60% at 50% -10%, rgba(212, 175, 55, 0.22), transparent 55%),
+    radial-gradient(80% 40% at 100% 100%, rgba(184, 92, 56, 0.14), transparent 50%),
+    linear-gradient(185deg, #1c130c 0%, #140e0a 42%, #0f0b08 100%);
+  border-right: 1px solid rgba(212, 175, 55, 0.28);
+  box-shadow: inset -1px 0 0 rgba(255, 246, 232, 0.04);
+  padding: 16px 14px 18px;
   position: sticky;
   top: 0;
   height: 100vh;
@@ -135,17 +137,47 @@ img, svg { display: block; }
   flex-direction: column;
   z-index: 5;
 }
+.sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, transparent, var(--gold) 20%, #e0bf55 50%, var(--gold-2) 80%, transparent);
+  opacity: 0.85;
+  pointer-events: none;
+}
+.sidebar::after {
+  content: "";
+  position: absolute;
+  inset: auto 12px 10px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.35), transparent);
+  pointer-events: none;
+}
 
 .brand {
-  background: #f6f0e6;
-  border-radius: 14px;
+  background:
+    linear-gradient(145deg, #fbf6ec, #f0e4d2);
+  border-radius: 16px;
   padding: 0;
-  margin-bottom: 8px;
-  border: 1px solid rgba(201, 162, 39, 0.35);
+  margin-bottom: 14px;
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(212, 175, 55, 0.12),
+    0 10px 28px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
   overflow: hidden;
   flex-shrink: 0;
   position: relative;
   aspect-ratio: 5 / 3;
+  transition: transform var(--med) var(--ease), box-shadow var(--med) var(--ease);
+}
+.brand:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 1px rgba(212, 175, 55, 0.28),
+    0 14px 32px rgba(0, 0, 0, 0.4),
+    0 0 24px rgba(212, 175, 55, 0.18);
 }
 .brand-logo {
   position: absolute;
@@ -175,40 +207,86 @@ img, svg { display: block; }
   flex: 1;
   min-height: 0;
   justify-content: space-between;
-  gap: 0;
+  gap: 2px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 55, 0.35) transparent;
+}
+.nav::-webkit-scrollbar { width: 4px; }
+.nav::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.35);
+  border-radius: 999px;
 }
 .nav-label {
   text-transform: uppercase;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   font-size: 9px;
-  color: #c4a574;
-  margin: 6px 10px 2px;
+  color: rgba(212, 175, 55, 0.72);
+  margin: 10px 12px 4px;
   font-weight: 700;
   font-family: Outfit, sans-serif;
   flex-shrink: 0;
+  position: relative;
 }
 .nav-label:first-child { margin-top: 0; }
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
   width: 100%;
   text-align: left;
-  padding: 0 10px;
-  min-height: 34px;
+  padding: 0 12px;
+  min-height: 36px;
   flex: 1 1 0;
   border-radius: 12px;
-  color: #e8d5b5;
+  color: #dcc9a8;
   font-size: 13.5px;
   font-weight: 600;
-  transition: background var(--fast) var(--ease), color var(--fast) var(--ease), transform var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+  letter-spacing: 0.01em;
+  transition:
+    background var(--fast) var(--ease),
+    color var(--fast) var(--ease),
+    transform var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease),
+    border-color var(--fast) var(--ease);
   position: relative;
+  border: 1px solid transparent;
+  animation: navIn 0.45s var(--ease) both;
 }
-.nav-item:hover { background: rgba(212, 175, 55, 0.12); color: #fff6e8; transform: translateX(2px); }
+.nav-item:nth-child(1) { animation-delay: 0.02s; }
+.nav-item:nth-child(2) { animation-delay: 0.04s; }
+.nav-item:nth-child(3) { animation-delay: 0.06s; }
+.nav-item:nth-child(4) { animation-delay: 0.08s; }
+.nav-item:nth-child(5) { animation-delay: 0.1s; }
+.nav-item:nth-child(6) { animation-delay: 0.12s; }
+.nav-item:nth-child(7) { animation-delay: 0.14s; }
+.nav-item:nth-child(8) { animation-delay: 0.16s; }
+.nav-item:nth-child(9) { animation-delay: 0.18s; }
+.nav-item:nth-child(10) { animation-delay: 0.2s; }
+.nav-item:nth-child(n+11) { animation-delay: 0.22s; }
+@keyframes navIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.nav-item:hover {
+  background: rgba(212, 175, 55, 0.14);
+  color: #fff8ea;
+  transform: translateX(3px);
+  border-color: rgba(212, 175, 55, 0.18);
+}
 .nav-item.active {
-  background: linear-gradient(90deg, rgba(212, 175, 55, 0.22), rgba(212, 175, 55, 0.08));
-  color: #f0d78a;
-  box-shadow: inset 3px 0 0 var(--gold);
+  background: linear-gradient(105deg, rgba(212, 175, 55, 0.32), rgba(212, 175, 55, 0.1) 70%);
+  color: #ffe9a8;
+  border-color: rgba(212, 175, 55, 0.35);
+  box-shadow:
+    inset 3px 0 0 var(--gold),
+    0 6px 18px rgba(0, 0, 0, 0.22),
+    0 0 20px rgba(212, 175, 55, 0.12);
+}
+.nav-item.active .nav-ico {
+  filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.55));
 }
 .nav-ico {
   width: 18px;
@@ -219,7 +297,9 @@ img, svg { display: block; }
   stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
+  transition: transform var(--fast) var(--ease), filter var(--fast) var(--ease);
 }
+.nav-item:hover .nav-ico { transform: scale(1.08); }
 .badge {
   margin-left: auto;
   min-width: 18px;
@@ -1181,8 +1261,8 @@ td.num, th.num { text-align: right; }
     max-height: 100dvh;
     padding: 12px 12px calc(16px + env(safe-area-inset-bottom, 0px));
     transform: translateX(-105%);
-    transition: transform 0.24s ease;
-    box-shadow: 18px 0 40px rgba(0, 0, 0, 0.28);
+    transition: transform 0.32s var(--ease);
+    box-shadow: 18px 0 48px rgba(0, 0, 0, 0.42);
     overflow: hidden;
     display: flex;
     flex-direction: column;
