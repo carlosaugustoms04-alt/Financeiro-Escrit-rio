@@ -309,7 +309,11 @@ function toast(msg) {
   const el = $("toast");
   el.textContent = msg;
   el.classList.remove("hidden");
-  setTimeout(() => el.classList.add("hidden"), 2600);
+  el.style.animation = "none";
+  void el.offsetWidth;
+  el.style.animation = "";
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.add("hidden"), 2800);
 }
 
 function sum(list, tipo) {
@@ -550,13 +554,15 @@ function drawMix(despesas) {
   });
 }
 
-function renderTransacoes() {
-  const tipo = $("tx-tipo").value;
-  const cat = $("tx-categoria").value;
-  const banco = $("tx-banco").value;
-  const status = $("tx-status").value;
-  const busca = $("tx-busca").value.trim().toLowerCase();
-  const list = db.transacoes.filter((tx) => {
+const txSelected = new Set();
+
+function filteredTransacoes() {
+  const tipo = $("tx-tipo")?.value || "todos";
+  const cat = $("tx-categoria")?.value || "todas";
+  const banco = $("tx-banco")?.value || "todos";
+  const status = $("tx-status")?.value || "todos";
+  const busca = ($("tx-busca")?.value || "").trim().toLowerCase();
+  return db.transacoes.filter((tx) => {
     if (tipo !== "todos" && tx.tipo !== tipo) return false;
     if (cat !== "todas" && tx.categoria !== cat) return false;
     if (banco !== "todos" && tx.banco !== banco) return false;
@@ -564,19 +570,113 @@ function renderTransacoes() {
     if (busca && !`${tx.desc} ${tx.categoria}`.toLowerCase().includes(busca)) return false;
     return true;
   }).sort((a, b) => b.data.localeCompare(a.data));
+}
 
-  $("tabela-transacoes").innerHTML = list.map((tx) => `<tr>
-    <td>${parseISO(tx.data).toLocaleDateString("pt-BR")}</td>
-    <td>${tx.desc}</td>
-    <td>${tx.categoria}</td>
-    <td>${bancoNome(tx.banco)}</td>
-    <td><span class="tag ${tx.status === "pendente" ? "pendente" : tx.tipo}">${tx.status}</span></td>
-    <td class="num ${tx.tipo === "receita" ? "gold" : "rose"}">${money(tx.valor)}</td>
-    <td class="row-actions">
-      <button class="link" data-edit="${tx.id}">Editar</button>
-      <button class="link" data-del="${tx.id}">Excluir</button>
-    </td>
-  </tr>`).join("") || `<tr><td colspan="7" class="empty">Nenhuma transação encontrada.</td></tr>`;
+function updateBulkBar() {
+  const bar = $("tx-bulk-bar");
+  const count = $("tx-bulk-count");
+  const checkAll = $("tx-check-all");
+  if (!bar || !count) return;
+  const n = txSelected.size;
+  bar.classList.toggle("hidden", n === 0);
+  count.textContent = `${n} selecionado${n === 1 ? "" : "s"}`;
+  const list = filteredTransacoes();
+  if (checkAll) {
+    checkAll.checked = list.length > 0 && list.every((tx) => txSelected.has(tx.id));
+    checkAll.indeterminate = list.some((tx) => txSelected.has(tx.id)) && !checkAll.checked;
+  }
+}
+
+function renderTransacoes() {
+  // Remove IDs que não existem mais
+  const valid = new Set(db.transacoes.map((t) => t.id));
+  [...txSelected].forEach((id) => { if (!valid.has(id)) txSelected.delete(id); });
+
+  const list = filteredTransacoes();
+  $("tabela-transacoes").innerHTML = list.map((tx) => {
+    const checked = txSelected.has(tx.id);
+    return `<tr class="${checked ? "tx-selected" : ""}" data-tx-id="${tx.id}">
+      <td class="td-check"><input type="checkbox" class="tx-check" data-tx-check="${tx.id}" ${checked ? "checked" : ""} /></td>
+      <td>${parseISO(tx.data).toLocaleDateString("pt-BR")}</td>
+      <td>${tx.desc}</td>
+      <td>${tx.categoria}</td>
+      <td>${bancoNome(tx.banco)}</td>
+      <td><span class="tag ${tx.status === "pendente" ? "pendente" : tx.tipo}">${tx.status}</span></td>
+      <td class="num ${tx.tipo === "receita" ? "gold" : "rose"}">${money(tx.valor)}</td>
+      <td class="row-actions">
+        <button class="link" data-edit="${tx.id}">Editar</button>
+        <button class="link" data-del="${tx.id}">Excluir</button>
+      </td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="8" class="empty">Nenhuma transação encontrada.</td></tr>`;
+  updateBulkBar();
+}
+
+function openBulkEditModal() {
+  if (!txSelected.size) return toast("Selecione ao menos um lançamento");
+  const selected = db.transacoes.filter((t) => txSelected.has(t.id));
+  const tipos = new Set(selected.map((t) => t.tipo));
+  $("bulk-sub").textContent = `${selected.length} lançamento(s) selecionado(s). Altere só o que quiser mudar.`;
+  $("bulk-tipo").value = "";
+  $("bulk-status").value = "";
+  $("bulk-data").value = "";
+  $("bulk-banco").innerHTML = `<option value="">Não alterar</option>` + db.bancos.map((b) => `<option value="${b.id}">${b.nome}</option>`).join("");
+
+  const tipoRef = tipos.size === 1 ? [...tipos][0] : "despesa";
+  const catsList = tipos.size === 1
+    ? cats(tipoRef)
+    : [...new Set([...cats("receita"), ...cats("despesa")])];
+  $("bulk-categoria").innerHTML = `<option value="">Não alterar</option>` + catsList.map((c) => `<option value="${c}">${c}</option>`).join("");
+  $("modal-bulk").classList.remove("hidden");
+}
+
+function closeBulkEditModal() {
+  $("modal-bulk").classList.add("hidden");
+}
+
+function applyBulkEdit(e) {
+  e.preventDefault();
+  if (!txSelected.size) return;
+  const tipo = $("bulk-tipo").value;
+  const categoria = $("bulk-categoria").value;
+  const banco = $("bulk-banco").value;
+  const status = $("bulk-status").value;
+  const data = $("bulk-data").value;
+  if (!tipo && !categoria && !banco && !status && !data) {
+    return toast("Escolha ao menos um campo para alterar");
+  }
+
+  let changed = 0;
+  db.transacoes.forEach((tx) => {
+    if (!txSelected.has(tx.id)) return;
+    if (tipo) tx.tipo = tipo;
+    if (banco) tx.banco = banco;
+    if (status) tx.status = status;
+    if (data) tx.data = data;
+    if (categoria) {
+      tx.categoria = categoria;
+    } else if (tipo && !cats(tx.tipo).includes(tx.categoria)) {
+      tx.categoria = cats(tx.tipo)[0] || tx.categoria;
+    }
+    changed += 1;
+  });
+  save();
+  closeBulkEditModal();
+  renderTransacoes();
+  badges();
+  toast(`${changed} lançamento(s) atualizados`);
+}
+
+function deleteBulkSelected() {
+  if (!txSelected.size) return;
+  if (!confirm(`Excluir ${txSelected.size} lançamento(s) selecionado(s)?`)) return;
+  const n = txSelected.size;
+  db.transacoes = db.transacoes.filter((t) => !txSelected.has(t.id));
+  txSelected.clear();
+  save();
+  renderTransacoes();
+  badges();
+  toast(`${n} lançamento(s) excluídos`);
 }
 
 function page(title, desc, body) {
@@ -1215,7 +1315,11 @@ function badges() {
 
 function showView(name) {
   view = name;
-  document.querySelectorAll(".view").forEach((el) => el.classList.toggle("hidden", el.id !== `view-${name}`));
+  document.querySelectorAll(".view").forEach((el) => {
+    const on = el.id === `view-${name}`;
+    el.classList.toggle("hidden", !on);
+    el.classList.toggle("view-enter", on);
+  });
   document.querySelectorAll(".nav-item").forEach((el) => el.classList.toggle("active", el.dataset.view === name));
   closeMenu();
   refresh();
@@ -2050,6 +2154,40 @@ function bind() {
     renderTransacoes();
   }));
   $("tx-busca").addEventListener("input", renderTransacoes);
+  $("tx-check-all")?.addEventListener("change", () => {
+    const on = $("tx-check-all").checked;
+    filteredTransacoes().forEach((tx) => {
+      if (on) txSelected.add(tx.id);
+      else txSelected.delete(tx.id);
+    });
+    renderTransacoes();
+  });
+  $("tabela-transacoes")?.addEventListener("change", (e) => {
+    const id = e.target.dataset?.txCheck;
+    if (!id) return;
+    if (e.target.checked) txSelected.add(id);
+    else txSelected.delete(id);
+    updateBulkBar();
+    const tr = e.target.closest("tr");
+    if (tr) tr.classList.toggle("tx-selected", e.target.checked);
+  });
+  $("tx-bulk-edit")?.addEventListener("click", openBulkEditModal);
+  $("tx-bulk-clear")?.addEventListener("click", () => {
+    txSelected.clear();
+    renderTransacoes();
+  });
+  $("tx-bulk-del")?.addEventListener("click", deleteBulkSelected);
+  $("modal-bulk-close")?.addEventListener("click", closeBulkEditModal);
+  $("modal-bulk-cancel")?.addEventListener("click", closeBulkEditModal);
+  $("modal-bulk")?.addEventListener("click", (e) => { if (e.target.id === "modal-bulk") closeBulkEditModal(); });
+  $("form-bulk")?.addEventListener("submit", applyBulkEdit);
+  $("bulk-tipo")?.addEventListener("change", () => {
+    const tipo = $("bulk-tipo").value;
+    const list = tipo ? cats(tipo) : [...new Set([...cats("receita"), ...cats("despesa")])];
+    const current = $("bulk-categoria").value;
+    $("bulk-categoria").innerHTML = `<option value="">Não alterar</option>` + list.map((c) => `<option value="${c}">${c}</option>`).join("");
+    if ([...$("bulk-categoria").options].some((o) => o.value === current)) $("bulk-categoria").value = current;
+  });
 
   ["rec-categoria", "rec-periodo", "rec-de", "rec-ate"].forEach((id) => {
     $(id).addEventListener("change", () => {

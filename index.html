@@ -6,7 +6,8 @@
   <title>Vitrina Contabilidade · Finanças</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <meta name="theme-color" content="#140e0a" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="icon" href="img/logo-vitrina.png" />
 </head>
@@ -446,7 +447,7 @@
       <section class="view hidden" id="view-transacoes">
         <div class="page-head">
           <h2>Transações</h2>
-          <p class="muted">Consulte, filtre e edite todos os lançamentos.</p>
+          <p class="muted">Consulte, filtre e edite lançamentos — inclusive em bloco.</p>
         </div>
         <div class="filters">
           <label>
@@ -478,11 +479,20 @@
             <input id="tx-busca" type="search" placeholder="Buscar lançamento…" />
           </label>
         </div>
+        <div class="bulk-bar hidden" id="tx-bulk-bar">
+          <span id="tx-bulk-count">0 selecionados</span>
+          <div class="bulk-actions">
+            <button type="button" class="btn btn-gold btn-sm" id="tx-bulk-edit">Editar em bloco</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="tx-bulk-clear">Limpar seleção</button>
+            <button type="button" class="btn btn-danger-text btn-sm" id="tx-bulk-del">Excluir selecionados</button>
+          </div>
+        </div>
         <article class="card table-card">
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
+                  <th class="th-check"><input type="checkbox" id="tx-check-all" title="Selecionar todos do filtro" /></th>
                   <th>Data</th>
                   <th>Descrição</th>
                   <th>Categoria</th>
@@ -549,6 +559,52 @@
         <div class="modal-actions">
           <button type="button" class="btn btn-ghost" id="modal-cancel">Cancelar</button>
           <button type="submit" class="btn btn-gold" id="modal-save">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="modal-bulk">
+    <div class="modal card">
+      <div class="modal-head">
+        <div>
+          <h3>Editar em bloco</h3>
+          <p class="muted" id="bulk-sub">Altere os campos desejados. Deixe “Não alterar” para manter o valor atual.</p>
+        </div>
+        <button class="icon-btn" id="modal-bulk-close" aria-label="Fechar">×</button>
+      </div>
+      <form id="form-bulk">
+        <label>Tipo
+          <select id="bulk-tipo">
+            <option value="">Não alterar</option>
+            <option value="receita">Receita</option>
+            <option value="despesa">Despesa</option>
+          </select>
+        </label>
+        <label>Categoria
+          <select id="bulk-categoria">
+            <option value="">Não alterar</option>
+          </select>
+        </label>
+        <label>Banco
+          <select id="bulk-banco">
+            <option value="">Não alterar</option>
+          </select>
+        </label>
+        <label>Status
+          <select id="bulk-status">
+            <option value="">Não alterar</option>
+            <option value="pago">Pago / recebido</option>
+            <option value="pendente">Pendente</option>
+          </select>
+        </label>
+        <label>Data (opcional)
+          <input id="bulk-data" type="date" />
+        </label>
+        <p class="muted" id="bulk-hint">Preencha só o que quiser mudar.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="modal-bulk-cancel">Cancelar</button>
+          <button type="submit" class="btn btn-gold">Aplicar nos selecionados</button>
         </div>
       </form>
     </div>
